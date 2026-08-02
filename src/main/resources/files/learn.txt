@@ -1,0 +1,10 @@
+Hello, I am learning websocket using spring boot.
+Websocket is a bidirectional asynchronous communication style.
+Today I have developed a basic websocket program that has a UI which displays two panels one
+is editor and other is preview where user can see the contents of file and edit them along side they get the preview of it.
+
+This program first establish a websocket connection and then load the file contents in the editor. Next we have the option to edit the file contents and save the edits to the actual file.
+
+It's just a simple use case for websocket learning.
+
+Happy Learning!!
