@@ -95,6 +95,9 @@
 
 <header>
     <h1>Live Document Sync</h1>
+    <div id="viewer-badge" style="background: #bf712c; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.9rem; display: inline-block; margin-top: 10px;">
+        Viewers: <span id="viewer-count">1</span>
+    </div>
 </header>
 <div class="container">
     <!-- Left Side: Editor -->
@@ -149,8 +152,16 @@
             stompClient.subscribe('/topic/updates', function (message) {
                 updatePreview(message.body);
             });
+            //subscribe to get viewer count
+            stompClient.subscribe('/topic/viewers', function (message) {
+                const count = message.body;
+                document.getElementById('viewer-count').textContent = count;
+            });
             // Immediately ask the server for the file data now that we are connected
             stompClient.send("/app/load", {}, "");
+
+            //immediately ask the server for active viewer count
+            stompClient.send("/app/viewers",{},"");
         }, function (error) {
             statusText.textContent = 'Disconnected';
             statusText.style.color = '#dc3545';
