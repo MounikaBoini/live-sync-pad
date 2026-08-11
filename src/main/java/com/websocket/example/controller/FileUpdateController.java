@@ -1,5 +1,6 @@
 package com.websocket.example.controller;
 
+import com.websocket.example.dto.DocumentUpdate;
 import com.websocket.example.event.WebSocketEventListener;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
@@ -31,8 +32,8 @@ public class FileUpdateController {
 
     @MessageMapping("/edit")
     @SendTo("/topic/updates")
-    public String previewContent(String newContent) {
-        return newContent;
+    public DocumentUpdate previewContent(DocumentUpdate update) {
+        return update;
     }
 
     @MessageMapping("/save")

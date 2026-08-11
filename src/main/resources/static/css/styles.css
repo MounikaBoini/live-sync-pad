@@ -1,0 +1,83 @@
+/* Base reset and styling */
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: #f0f2f5;
+}
+
+/* Header styling */
+header {
+    background-color: #1a1a1a;
+    color: #ffffff;
+    padding: 1rem 2rem;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    letter-spacing: 0.5px;
+}
+
+/* Two-column layout */
+.container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    padding: 1.5rem;
+    gap: 1.5rem;
+}
+
+.column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.column-header {
+    padding: 0.75rem 1.25rem;
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Editor pane (Left) */
+textarea {
+    flex: 1;
+    border: none;
+    padding: 1.25rem;
+    resize: none;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #24292e;
+    outline: none;
+    background-color: #fafafa;
+}
+
+textarea:focus {
+    background-color: #ffffff;
+}
+
+/* Preview pane (Right) */
+#preview {
+    flex: 1;
+    padding: 1.25rem;
+    overflow-y: auto;
+    /* Preserves formatting for plain text/code. Remove if rendering raw HTML */
+    white-space: pre-wrap;
+    line-height: 1.5;
+    color: #333333;
+}

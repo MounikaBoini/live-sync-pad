@@ -5,91 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
     <title>WebSocket Live Editor</title>
-    <style>
-        /* Base reset and styling */
-        body {
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            background-color: #f0f2f5;
-        }
-
-        /* Header styling */
-        header {
-            background-color: #1a1a1a;
-            color: #ffffff;
-            padding: 1rem 2rem;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        header h1 {
-            margin: 0;
-            font-size: 1.5rem;
-            letter-spacing: 0.5px;
-        }
-
-        /* Two-column layout */
-        .container {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-            padding: 1.5rem;
-            gap: 1.5rem;
-        }
-
-        .column {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-
-        .column-header {
-            padding: 0.75rem 1.25rem;
-            background: #f8f9fa;
-            font-weight: 600;
-            color: #495057;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        /* Editor pane (Left) */
-        textarea {
-            flex: 1;
-            border: none;
-            padding: 1.25rem;
-            resize: none;
-            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-            font-size: 14px;
-            line-height: 1.5;
-            color: #24292e;
-            outline: none;
-            background-color: #fafafa;
-        }
-
-        textarea:focus {
-            background-color: #ffffff;
-        }
-
-        /* Preview pane (Right) */
-        #preview {
-            flex: 1;
-            padding: 1.25rem;
-            overflow-y: auto;
-            /* Preserves formatting for plain text/code. Remove if rendering raw HTML */
-            white-space: pre-wrap;
-            line-height: 1.5;
-            color: #333333;
-        }
-    </style>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
@@ -105,6 +21,8 @@
         <div class="column-header">
             <span>Editor</span>
             <div>
+                <!-- New Typing Indicator -->
+                <span id="typing-indicator" style="color: #007bff; font-size: 0.85rem; margin-right: 15px; font-style: italic;"></span>
                 <!-- Added Save Button -->
                 <button id="save-btn" style="margin-right: 10px; padding: 4px 12px; cursor: pointer;">Save File</button>
                 <span id="connection-status" style="color: #dc3545; font-size: 0.85rem;">Disconnected</span>
@@ -119,85 +37,6 @@
         <div id="preview"></div>
     </div>
 </div>
-
-<script>
-    // DOM Elements
-    const editor = document.getElementById('editor');
-    const preview = document.getElementById('preview');
-    const statusText = document.getElementById('connection-status');
-    const saveBtn = document.getElementById('save-btn');
-
-    let stompClient = null;
-
-    function connect() {
-
-        stompClient = Stomp.client('ws://localhost:8080/gs-guide-websocket');
-
-        // Turn off debug logging in console (optional)
-        stompClient.debug = null;
-
-        stompClient.connect({}, function (frame) {
-            statusText.textContent = 'Connected';
-            statusText.style.color = '#28a745';
-            console.log('Connected: ' + frame);
-
-            //subscribe to initial load channel
-            stompClient.subscribe('/topic/loaded', function (message) {
-                const initialContent = message.body;
-                // Populate BOTH the editor and preview with the file data
-                editor.value = initialContent;
-                updatePreview(initialContent);
-            });
-            //subscribe to live preview channel
-            stompClient.subscribe('/topic/updates', function (message) {
-                updatePreview(message.body);
-            });
-            //subscribe to get viewer count
-            stompClient.subscribe('/topic/viewers', function (message) {
-                const count = message.body;
-                document.getElementById('viewer-count').textContent = count;
-            });
-            // Immediately ask the server for the file data now that we are connected
-            stompClient.send("/app/load", {}, "");
-
-            //immediately ask the server for active viewer count
-            stompClient.send("/app/viewers",{},"");
-        }, function (error) {
-            statusText.textContent = 'Disconnected';
-            statusText.style.color = '#dc3545';
-            // Attempt to reconnect after 5 seconds
-            setTimeout(connect, 5000);
-        });
-    }
-
-    // 3. Listen for user edits and send to Spring Boot (@MessageMapping)
-    editor.addEventListener('input', (e) => {
-        const content = e.target.value;
-        // Send the payload to the server
-        if (stompClient !== null && stompClient.connected) {
-            stompClient.send("/app/edit", {}, content);
-        }
-    });
-
-    // Handle Save Button Click
-    saveBtn.addEventListener('click', () => {
-        if (stompClient !== null && stompClient.connected) {
-            const currentContent = editor.value;
-            // Send the complete content to the save endpoint
-            stompClient.send("/app/save", {}, currentContent);
-
-            // Brief visual feedback for the user
-            const originalText = saveBtn.textContent;
-            saveBtn.textContent = "Saved!";
-            setTimeout(() => saveBtn.textContent = originalText, 2000);
-        }
-    });
-    function updatePreview(content) {
-        preview.textContent = content;
-    }
-
-    // Start connection when page loads
-    connect();
-</script>
+<script src="js/app.js"></script>
 </body>
 </html>

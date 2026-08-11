@@ -24,7 +24,8 @@ public class WebSocketEventListener {
 
     @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
-        messagingTemplate.convertAndSend("/topic/viewers", activeUsers.decrementAndGet());
+        int currentUsers = activeUsers.updateAndGet(count -> Math.max(0, count - 1));
+        messagingTemplate.convertAndSend("/topic/viewers", currentUsers);
     }
 
     public int getActiveUsers() {
