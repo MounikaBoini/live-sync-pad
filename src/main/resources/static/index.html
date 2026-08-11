@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,36 +8,51 @@
     <title>WebSocket Live Editor</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
 
-<header>
-    <h1>Live Document Sync</h1>
-    <div id="viewer-badge" style="background: #bf712c; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.9rem; display: inline-block; margin-top: 10px;">
-        Viewers: <span id="viewer-count">1</span>
-    </div>
-</header>
-<div class="container">
-    <!-- Left Side: Editor -->
-    <div class="column">
-        <div class="column-header">
-            <span>Editor</span>
-            <div>
-                <!-- New Typing Indicator -->
-                <span id="typing-indicator" style="color: #007bff; font-size: 0.85rem; margin-right: 15px; font-style: italic;"></span>
-                <!-- Added Save Button -->
-                <button id="save-btn" style="margin-right: 10px; padding: 4px 12px; cursor: pointer;">Save File</button>
-                <span id="connection-status" style="color: #dc3545; font-size: 0.85rem;">Disconnected</span>
+    <header>
+        <h1>Live Document Sync</h1>
+        <div id="viewer-badge"
+            style="background: #bf712c; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.9rem; display: inline-block; margin-top: 10px;">
+            Viewers: <span id="viewer-count">1</span>
+        </div>
+    </header>
+    <div class="container">
+        <!-- Left Side: Editor -->
+        <div class="column">
+            <div class="column-header">
+                <span>Editor</span>
+                <div>
+                    <!-- Added Save Button -->
+                    <button id="save-btn" style="margin-right: 10px; padding: 4px 12px; cursor: pointer;">Save
+                        File</button>
+                    <span id="connection-status" style="color: #dc3545; font-size: 0.85rem;">Disconnected</span>
+                </div>
+            </div>
+            <div id="editor-container" style="flex: 1; min-height: 400px; text-align: left; border: 1px solid #ccc;">
             </div>
         </div>
-        <textarea id="editor" placeholder="Loading file..."></textarea>
-    </div>
 
-    <!-- Right Side: Preview -->
-    <div class="column">
-        <div class="column-header">Preview</div>
-        <div id="preview"></div>
+        <!-- Right Side: Preview -->
+        <div class="column">
+            <div class="column-header">Preview</div>
+            <div id="preview"></div>
+        </div>
     </div>
-</div>
-<script src="js/app.js"></script>
+    <!-- Monaco Editor Script Loader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs/loader.min.js"></script>
+    <script>
+        // Configure the path for Monaco
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.39.0/min/vs' } });
+
+        // Load the Monaco engine, THEN load our app.js
+        require(['vs/editor/editor.main'], function () {
+            const script = document.createElement('script');
+            script.src = 'js/app.js';
+            document.body.appendChild(script);
+        });
+    </script>
 </body>
+
 </html>
