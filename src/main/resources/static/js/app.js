@@ -24,7 +24,8 @@ const editor = monaco.editor.create(document.getElementById('editor-container'),
     value: "Loading file...",
     language: "markdown",
     theme: "vs-light",
-    automaticLayout: true
+    automaticLayout: true,
+    wordWrap: "on"
 });
 
 // Initialize the decorations tracker for remote cursors
@@ -222,7 +223,7 @@ saveBtn.addEventListener('click', () => {
 });
 
 function updatePreview(content) {
-    preview.textContent = content;
+    preview.innerHTML = marked.parse(content);
 }
 
 // Start connection when page loads

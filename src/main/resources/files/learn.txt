@@ -1,10 +1,25 @@
-Hello, I am learning websocket using spring boot.
-Websocket is a bidirectional asynchronous communication style.
-Today I have developed a basic websocket program that has a UI which displays two panels one
-is editor and other is preview where user can see the contents of file and edit them along side they get the preview of it.
+# Live Sync Pad ⚡
 
-This program first establish a websocket connection and then load the file contents in the editor. Next we have the option to edit the file contents and save the edits to the actual file.
+Live Sync Pad is a real-time, collaborative text editor built with **Spring Boot WebSockets** and the **Monaco Editor** (the engine behind VS Code). It allows multiple users to simultaneously edit a shared document with live visual tracking of remote cursors, dynamic user presence, and synchronized dual-pane scrolling.
 
-It's just a simple use case for websocket learning.
+## 🚀 Features
 
-Happy Learning!!
+*   **Real-Time Collaborative Editing:** Document synchronization across multiple clients using a Spring Boot STOMP WebSocket broker.
+*   **Live Remote Cursors:** Visual cursor tracking utilizing the Monaco Decorations API. Users are dynamically assigned unique colors and floating name tags based on a hash of their username.
+*   **Thread-Safe Presence Management:** Robust backend session tracking using `ConcurrentHashMap` to monitor active viewers, handling WebSocket connection and disconnection events.
+*   **Ghost Cursor Cleanup:** Automated event listeners that instantly broadcast targeted teardown commands when a user's TCP connection drops, keeping the UI clean of disconnected client artifacts.
+*   **Synchronized Scrolling:** Proportional scroll-syncing between the Monaco editor canvas and the preview pane for a seamless writing experience.
+*   **File Persistence:** Read and write capability directly to the local server file system.
+
+## 🛠️ Tech Stack
+
+**Backend:**
+*   Java / Spring Boot
+*   Spring WebSockets (STOMP Messaging Protocol)
+*   Concurrent Data Structures (`ConcurrentHashMap`)
+
+**Frontend:**
+*   JavaScript (Vanilla/ES6)
+*   Monaco Editor API (Microsoft)
+*   HTML5 & CSS3 (Flexbox architecture)
+*   Stomp.js

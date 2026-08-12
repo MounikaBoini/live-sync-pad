@@ -76,8 +76,6 @@ textarea:focus {
     flex: 1;
     padding: 1.25rem;
     overflow-y: auto;
-    /* Preserves formatting for plain text/code. Remove if rendering raw HTML */
-    white-space: pre-wrap;
     line-height: 1.5;
     color: #333333;
 }
