@@ -3,6 +3,8 @@ const preview = document.getElementById('preview');
 const statusText = document.getElementById('connection-status');
 const saveBtn = document.getElementById('save-btn');
 let stompClient = null;
+let isUpdatingFromServer = false;
+
 // Ask for username immediately when the script loads
 const currentUsername = prompt("Welcome to Live Sync Pad! Please enter your name:") || "Anonymous User";
 
@@ -16,6 +18,7 @@ function getColorForUser(username) {
     }
     return userColors[Math.abs(hash) % userColors.length];
 }
+
 // --- Initialize Monaco Editor ---
 const editor = monaco.editor.create(document.getElementById('editor-container'), {
     value: "Loading file...",
@@ -26,6 +29,7 @@ const editor = monaco.editor.create(document.getElementById('editor-container'),
 
 // Initialize the decorations tracker for remote cursors
 const remoteCursors = editor.createDecorationsCollection([]);
+const activeUserDecorations = new Map();
 
 function connect() {
 
@@ -34,7 +38,7 @@ function connect() {
     // Turn off debug logging in console (optional)
     stompClient.debug = null;
 
-    stompClient.connect({}, function (frame) {
+    stompClient.connect({ 'username': currentUsername }, function (frame) {
         statusText.textContent = 'Connected';
         statusText.style.color = '#28a745';
 
@@ -104,9 +108,7 @@ function connect() {
                     `;
                         document.head.appendChild(style);
                     }
-
-                    // Apply the new dynamic classes to Monaco
-                    remoteCursors.set([{
+                    activeUserDecorations.set(updateData.username, {
                         range: new monaco.Range(
                             updateData.cursorLine,
                             updateData.cursorColumn,
@@ -115,10 +117,13 @@ function connect() {
                         ),
                         options: {
                             className: `remote-cursor cursor-${safeUsername}`,
-                            hoverMessage: { value: updateData.username },
+                            hoverMessage: {value: updateData.username},
                             beforeContentClassName: `cursor-name-${safeUsername}`
                         }
-                    }]);
+                    });
+
+                    // NEW: Tell Monaco to draw EVERY cursor currently stored in our Map
+                    remoteCursors.set(Array.from(activeUserDecorations.values()));
                 }
             }
         });
@@ -127,9 +132,21 @@ function connect() {
             const count = message.body;
             document.getElementById('viewer-count').textContent = count;
         });
+        // Listen for users leaving to clean up ghost cursors
+        stompClient.subscribe('/topic/leave', function (message) {
+            const disconnectedUser = message.body;
+
+            // If they are in our visual map, remove them
+            if (activeUserDecorations.has(disconnectedUser)) {
+                activeUserDecorations.delete(disconnectedUser);
+
+                // Tell Monaco to redraw the cursors (which will now exclude the person who left)
+                remoteCursors.set(Array.from(activeUserDecorations.values()));
+            }
+        });
+
         // Immediately ask the server for the file data now that we are connected
         stompClient.send("/app/load", {}, "");
-
         //immediately ask the server for active viewer count
         stompClient.send("/app/viewers", {}, "");
     }, function (error) {
@@ -139,15 +156,16 @@ function connect() {
         setTimeout(connect, 5000);
     });
 }
+
 // Handle Content Changes (Typing)
 editor.onDidChangeModelContent((e) => {
     // Only broadcast if the user is typing, NOT if the server just updated the editor
     if (!isUpdatingFromServer && stompClient !== null && stompClient.connected) {
         const content = editor.getValue();
-        
+
         // Update local preview instantly for a snappy UI
         updatePreview(content);
-        
+
         const position = editor.getPosition();
         const payload = {
             username: currentUsername,
@@ -155,7 +173,7 @@ editor.onDidChangeModelContent((e) => {
             cursorLine: position ? position.lineNumber : 1,
             cursorColumn: position ? position.column : 1
         };
-        
+
         stompClient.send("/app/edit", {}, JSON.stringify(payload));
     }
 });
@@ -172,10 +190,27 @@ editor.onDidChangeCursorPosition((e) => {
     }
 });
 
+editor.onDidScrollChange((e) => {
+    const editorVisibleHeight = editor.getLayoutInfo().height;
+    const editorTotalHeight = e.scrollHeight;
+
+    // If the document is too short to scroll, do nothing
+    if (editorTotalHeight <= editorVisibleHeight) return;
+
+    // Calculate how far down we are as a percentage (0.0 to 1.0)
+    const scrollPercentage = e.scrollTop / (editorTotalHeight - editorVisibleHeight);
+
+    // Apply that same percentage to the Preview window
+    const previewTotalHeight = preview.scrollHeight;
+    const previewVisibleHeight = preview.clientHeight;
+
+    preview.scrollTop = scrollPercentage * (previewTotalHeight - previewVisibleHeight);
+});
+
 // Handle Save Button Click
 saveBtn.addEventListener('click', () => {
     if (stompClient !== null && stompClient.connected) {
-        const currentContent = editor.value;
+        const currentContent = editor.getValue();
         // Send the complete content to the save endpoint
         stompClient.send("/app/save", {}, currentContent);
 
@@ -185,6 +220,7 @@ saveBtn.addEventListener('click', () => {
         setTimeout(() => saveBtn.textContent = originalText, 2000);
     }
 });
+
 function updatePreview(content) {
     preview.textContent = content;
 }

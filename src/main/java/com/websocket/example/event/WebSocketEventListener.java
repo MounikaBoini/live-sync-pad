@@ -6,9 +6,12 @@ import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.stereotype.Component;
+import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionConnectedEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -16,23 +19,25 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component
 public class WebSocketEventListener {
     private static final Logger log = LoggerFactory.getLogger(WebSocketEventListener.class);
-    private final Set<String> activeSessions = ConcurrentHashMap.newKeySet();
-    private final AtomicInteger activeUsers = new AtomicInteger(0);
     private final SimpMessagingTemplate messagingTemplate;
+    private final Map<String,String> sessionUserMap = new ConcurrentHashMap<>(); // map to store username - their sessionID
 
     public WebSocketEventListener(SimpMessagingTemplate messagingTemplate) {
         this.messagingTemplate = messagingTemplate;
     }
 
     @EventListener
-    public void handleWebSocketConnectListener(SessionConnectedEvent event) {
-        // Extract the unique Session ID from the connection headers
+    public void handleWebSocketConnectListener(SessionConnectEvent event) { // Note: ConnectEvent!
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(event.getMessage());
         String sessionId = accessor.getSessionId();
 
         if (sessionId != null) {
-            activeSessions.add(sessionId); // Adds the unique ID to our list
-            log.info("New connection ({}). Total active users: {}", sessionId, activeSessions.size());
+            List<String> usernameHeader = accessor.getNativeHeader("username");
+            if (usernameHeader != null && !usernameHeader.isEmpty()) {
+                String username = usernameHeader.get(0);
+                sessionUserMap.put(sessionId, username);
+                log.info("User {} joined. Total active users: {}", username, sessionUserMap.size());
+            }
             broadcastViewerCount();
         }
     }
@@ -43,18 +48,20 @@ public class WebSocketEventListener {
         String sessionId = event.getSessionId();
 
         if (sessionId != null) {
-            // Because this is a Set, removing the same ID twice does nothing (Idempotent!)
-            activeSessions.remove(sessionId);
-            log.info("Connection closed ({}). Total active users: {}", sessionId, activeSessions.size());
+            String disconnectedUser = sessionUserMap.remove(sessionId);
+            if (disconnectedUser != null) {
+                log.info("User {} disconnected. Total active users: {}", disconnectedUser, sessionUserMap.size());
+                messagingTemplate.convertAndSend("/topic/leave", disconnectedUser);
+            }
             broadcastViewerCount();
         }
     }
 
     public int getActiveUsers() {
-        return activeSessions.size();
+        return sessionUserMap.size();
     }
     private void broadcastViewerCount() {
         // The viewer count is now just the true size of the active sessions list
-        messagingTemplate.convertAndSend("/topic/viewers", activeSessions.size());
+        messagingTemplate.convertAndSend("/topic/viewers", getActiveUsers());
     }
 }
